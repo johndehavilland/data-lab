@@ -67,7 +67,13 @@ namespace Microsoft.CodeChallenges.CosmosDB.Lab.Controllers
             };
             var numRetries = 0;
 
-            IDocumentQuery<dynamic> docQuery = null;
+            //IDocumentQuery<dynamic> docQuery = null;
+            var collectionUri = UriFactory.CreateDocumentCollectionUri(
+            ConfigurationManager.AppSettings["CosmosDB:DatabaseName"],
+            ConfigurationManager.AppSettings["CosmosDB:CollectionName"]);
+            var client = await GetReadOnlyClient(locationName);
+            var docQuery = client.CreateDocumentQuery(collectionUri, query, FeedOptions).AsDocumentQuery();
+
 
             if (docQuery != null)
             {

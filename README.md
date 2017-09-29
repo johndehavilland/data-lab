@@ -189,97 +189,11 @@ FROM c
 
 ...and click on **Run It!**
 
-![](./images/no_results.png)
-
-Currently there are no results - we need to finish implementing the DocumentDB API call first.
-
-### Part Two
-
-In the visual studio solution navigate to the `HomeController` class in the `LabWeb` project.
-
-![](./images/home_controller.png)
-
-Find the `Query` action method. There is a line of code that looks like this:
-
-```csharp
-IDocumentQuery<dynamic> docQuery = null;
-```
-
-We will modify it to create and send a DocumentDB SQL query. 
-
-The query text from the page is passed into the action via the `query` variable. Change it to the following:
-
-```csharp
-var collectionUri = UriFactory.CreateDocumentCollectionUri(
-    ConfigurationManager.AppSettings["CosmosDB:DatabaseName"],
-    ConfigurationManager.AppSettings["CosmosDB:CollectionName"]);
-var client = await GetReadOnlyClient(locationName);
-var docQuery = client.CreateDocumentQuery(collectionUri, query, FeedOptions).AsDocumentQuery();
-```
-
-Notice in the FeedOptions, we are setting `MaxItemCount = 10`. This means we will get up to 10 results per execution of the query. The DocumentDB API has 
-support for paging built in (We will see an example of this shortly).
-
-Let's quickly inspect the rest of the Query Action:
-
-```csharp
-var results = await docQuery.ExecuteNextAsync();
-```
-
-This part is what actually uses the DocumentDB SDK to call Azure Cosmos DB and retrieve the results for
-our query. Notice this will only return up to `MaxItemCount` results as above (In our case 10 items). 
-This can also be set to -1 for dynamic sizing of the resulting set to the maximum response size.
-
-If we wanted to get the next set of results we would have to call `docQuery.ExecuteNextAsync()` again.
-
-In the interests of this demo, we are only retrieving the first ten results. However if this was a real-world application
-where we need ALL of the results for a query. We would set the MaxItemCount to -1 and do something like the following:
-
-```csharp
-while (docQuery.HasMoreResults)
-{
-    //Can use strongly typed objects by using <T> on docQuery.ExecuteNextAsync<T>()
-    var results = await docQuery.ExecuteNextAsync();
-
-    //dynamic can also be T
-    foreach (dynamic result in results)
-    {
-        //Do something with results
-    }
-}
-```
-
-> **Note:** We are deserializing the JSON string and serializing it back again so that we can format the JSON into human readable string.
-
-Press `F5` to compile and launch the web app on the local machine.
-
-Type this query into the query box:
-
-```SQL
-SELECT *
-FROM c
-```
-
-...and click on **Run It!**
-
-![](./images/50_results.png)
-
-Progress! We have successfully returned results from Azure Cosmos DB.
-
-> **Note** 
-Due to the nature of this lab, we are showing examples of SQL Query format.
-However you can also execute queries against Cosmos DB by using LINQ to DocumentDB API SQL adapter. More infomation at [https://docs.microsoft.com/en-us/azure/cosmos-db/documentdb-sql-query](https://docs.microsoft.com/en-us/azure/cosmos-db/documentdb-sql-query)
-
-
-## Scenario 2
-
-From now on, we will be working directly in the web browser.
-
 In this scenario we will introduce the DocumentDB SQL syntax and show how we can use it to manipulate our results.
 
 The dataset we are querying is a live stream of tweets from twitter with hashtags relating to //build/.
 
-### Part One
+### Part Two
 
 In the query, the `FROM` name is simply an alias to the entire collection for the user to refer to in the query. It is not actually a table like in traditional SQL.
 
@@ -395,7 +309,7 @@ WHERE people.name = "Joe Bloggs"
 
 Cosmos DB does not care that the property does not exist on the tweet or product objects. It will only execute the filter on documents where the property does exist. Cosmos DB has indexing on all the data on a document. So executing these kind of filters are very fast. 
 
-## Scenario 3
+## Scenario 2
 
 In this scenario we are going to see how we can use joins to inspect child objects / arrays.
 
